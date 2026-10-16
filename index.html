@@ -227,18 +227,20 @@
       }
     }
 
-    /* ===== DYNAMIC SPAWNED CELEBRATION BALLOONS ===== */
+    /* ===== DYNAMIC SPAWNED INTERACTIVE BALLOONS ===== */
     .dynamic-balloon {
       position: fixed;
       bottom: -150px;
       width: 48px;
       height: 62px;
       border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
       z-index: 1200;
       box-shadow: inset -4px -6px 12px rgba(0, 0, 0, 0.12), 0 8px 22px rgba(157, 23, 77, 0.22);
       animation: dynamicBalloonFloat linear forwards;
       will-change: transform, opacity;
+      user-select: none;
     }
 
     .dynamic-balloon::after {
@@ -366,7 +368,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(255, 245, 247, 0.9);
+      background: rgba(255, 245, 247, 0.92);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--card-border);
@@ -386,7 +388,7 @@
 
     .quick-controls {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
     .btn-pill {
@@ -396,7 +398,7 @@
       color: var(--color-rose-deep);
       font-weight: 700;
       font-size: 0.85rem;
-      padding: 7px 16px;
+      padding: 7px 14px;
       border-radius: 9999px;
       cursor: pointer;
       display: inline-flex;
@@ -408,6 +410,12 @@
 
     .btn-pill:hover {
       background: var(--color-rose-light);
+      border-color: var(--color-rose-deep);
+    }
+
+    .btn-pill.playing {
+      background: var(--color-rose-deep);
+      color: #ffffff;
       border-color: var(--color-rose-deep);
     }
 
@@ -526,6 +534,7 @@
       perspective: 1200px;
       cursor: pointer;
       user-select: none;
+      touch-action: pan-y;
     }
 
     .photo-flipper {
@@ -819,7 +828,7 @@
       max-width: 400px;              /* Gikunhoran ang width */
       aspect-ratio: 9 / 16;          /* Gipatas-an vertically para sa portrait/mobile video */
       max-height: 640px;
-      margin: 0 auto 1.5rem;         /* Sentrado sa editorial card */
+      margin: 0 auto 1.5rem;         /* Sentrado sa card */
       background: #000000;
       border-radius: 24px;
       overflow: hidden;
@@ -934,6 +943,7 @@
     <div class="quick-controls">
       <button class="btn-pill" id="btn-quick-audio" type="button">🎵 Awit</button>
       <button class="btn-pill" id="btn-quick-shower" type="button">🌸 Bulak</button>
+      <button class="btn-pill" id="btn-quick-share" type="button">🔗 I-share</button>
     </div>
   </header>
 
@@ -948,8 +958,8 @@
           Bulawanong <span>Pahiyom ug Grasya</span>
         </h2>
 
-        <!-- Interactive 3D Card Flip (Tap to flip front/back) -->
-        <div class="photo-flip-scene" id="photo-frame-trigger" title="I-tap aron makita ang sulat sa luyo o motuyok!">
+        <!-- Interactive 3D Card Flip (Tap to flip; Swipe left/right to browse) -->
+        <div class="photo-flip-scene" id="photo-frame-trigger" title="I-tap aron motuyok o i-swipe pawa/patuo aron mag-ilis sa litrato!">
           <div class="photo-flipper" id="photo-flipper">
             <!-- Front Face: Image -->
             <div class="photo-card-front">
@@ -1131,9 +1141,9 @@
           Zumba &amp; Walking <span>@ Grandstand Oval</span>
         </h2>
 
-        <!-- Vertical Optimized Video Frame -->
+        <!-- Vertical Optimized Video Frame with Poster -->
         <div class="video-player-frame">
-          <video id="birthday-video" controls playsinline preload="metadata">
+          <video id="birthday-video" controls playsinline preload="metadata" poster="images/My%20Photo%20Shoot3.jpg">
             <source src="videos/zumba-zumba%20din%20pag%20may%20time%20hehe.mp4" type="video/mp4">
             Wala gisuportahan sa browser ang video format.
           </video>
@@ -1223,6 +1233,7 @@
         this.ctx = null;
         this.compressor = null;
         this.activeOscs = [];
+        this.isPlaying = false;
 
         const C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23,
               G4 = 392.00, A4 = 440.00, B4 = 493.88, C5 = 523.25,
@@ -1242,7 +1253,6 @@
           const AudioClass = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioClass();
 
-          // Master Dynamic Limiter / Compressor Node
           this.compressor = this.ctx.createDynamicsCompressor();
           this.compressor.threshold.setValueAtTime(-6.0, this.ctx.currentTime);
           this.compressor.knee.setValueAtTime(3.0, this.ctx.currentTime);
@@ -1262,9 +1272,9 @@
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = "triangle";
-        osc.frequency.setValueAtTime(420, now);
-        osc.frequency.exponentialRampToValueAtTime(940, now + 0.05);
-        gain.gain.setValueAtTime(0.3, now);
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(1120, now + 0.05);
+        gain.gain.setValueAtTime(0.35, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
         osc.connect(gain);
         gain.connect(this.compressor);
@@ -1315,6 +1325,8 @@
       playSong() {
         this.ensureContext();
         this.stopSong();
+        this.isPlaying = true;
+
         const masterGain = this.ctx.createGain();
         masterGain.gain.setValueAtTime(0.5, this.ctx.currentTime);
         masterGain.connect(this.compressor);
@@ -1377,6 +1389,7 @@
           try { o.stop(); } catch (e) {}
         });
         this.activeOscs = [];
+        this.isPlaying = false;
       }
     }
 
@@ -1393,7 +1406,6 @@
 
         this.colors = ["#db2777", "#f472b6", "#fbcfe8", "#fda4af", "#ffffff"];
 
-        // Pre-allocated object pools
         this.petalsPool = Array.from({ length: 90 }, () => ({
           active: false, x: 0, y: 0, size: 0, color: "", vy: 0,
           swayAmp: 0, swaySpeed: 0, swayAngle: 0, rotation: 0, vRot: 0
@@ -1578,7 +1590,7 @@
     const particles = new PooledRetinaParticleEngine("visual-canvas");
 
     /* =========================================================================
-     * 5. DYNAMIC CELEBRATION BALLOONS SPAWNER
+     * 5. DYNAMIC CELEBRATION BALLOONS SPAWNER (WITH INTERACTIVE POP)
      * ========================================================================= */
     function spawnCelebrationBalloons(count = 35) {
       if (prefersReducedMotion) return;
@@ -1595,7 +1607,7 @@
         const balloon = document.createElement("div");
         balloon.className = "dynamic-balloon";
 
-        const startX = Math.random() * 92 + 4; // 4vw hangtod 96vw
+        const startX = Math.random() * 92 + 4;
         const duration = 5.5 + Math.random() * 4.5;
         const delay = Math.random() * 0.9;
         const scale = 0.75 + Math.random() * 0.55;
@@ -1608,10 +1620,20 @@
         balloon.style.transform = `scale(${scale})`;
         balloon.style.setProperty("--sway-x", `${swayDistance}px`);
 
+        // Interactive Tap-to-Pop
+        balloon.addEventListener("pointerdown", (e) => {
+          e.stopPropagation();
+          triggerHaptic([60, 40]);
+          sound.playPop();
+          const bRect = balloon.getBoundingClientRect();
+          particles.spawnSparks(bRect.left + bRect.width / 2, bRect.top + bRect.height / 2, 22);
+          balloon.remove();
+        });
+
         document.body.appendChild(balloon);
 
         setTimeout(() => {
-          balloon.remove();
+          if (balloon.parentNode) balloon.remove();
         }, (duration + delay) * 1000);
       }
     }
@@ -1624,10 +1646,26 @@
     const statusEl = document.getElementById("blow-status-text");
     let candleBlown = false;
 
+    let micStream = null;
+    let micCtx = null;
+    let micAnalyser = null;
+    let isMicActive = false;
+
     function blowOutCandle() {
       if (candleBlown) return;
       candleBlown = true;
       triggerHaptic([50, 40, 100]);
+
+      // Release microphone hardware resources immediately
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+      }
+      if (micCtx && micCtx.state !== 'closed') {
+        micCtx.close();
+        micCtx = null;
+      }
+      isMicActive = false;
 
       if (flame6) flame6.classList.add("extinguished");
       if (flame8) flame8.classList.add("extinguished");
@@ -1662,11 +1700,6 @@
       statusEl.textContent = "💨 Pislita ang cake o tuyopa ang imong mikropono!";
       startMicSensor();
     });
-
-    let micStream = null;
-    let micCtx = null;
-    let micAnalyser = null;
-    let isMicActive = false;
 
     async function startMicSensor() {
       if (isMicActive || candleBlown) return;
@@ -1713,9 +1746,6 @@
       const rms = Math.sqrt(sum / buffer.length);
 
       if (rms > 0.18) {
-        if (micStream) micStream.getTracks().forEach(t => t.stop());
-        if (micCtx) micCtx.close();
-        isMicActive = false;
         blowOutCandle();
         return;
       }
@@ -1723,7 +1753,7 @@
     }
 
     /* =========================================================================
-     * 7. PHOTO CAROUSEL & 3D CARD-FLIP ORCHESTRATION
+     * 7. PHOTO CAROUSEL & 3D CARD-FLIP (WITH TOUCH SWIPE DISPATCHER)
      * ========================================================================= */
     let currentPhotoIdx = 0;
     const photoEl = document.getElementById("celebrant-photo");
@@ -1751,6 +1781,14 @@
       particles.spawnSparks(rect.left + rect.width / 2, rect.top + rect.height / 2, 35);
     }
 
+    function prevPhoto() {
+      triggerHaptic([25]);
+      sound.playPop();
+      flipScene.classList.remove("flipped");
+      currentPhotoIdx = (currentPhotoIdx - 1 + CONFIG.photoGallery.length) % CONFIG.photoGallery.length;
+      setPhoto(currentPhotoIdx);
+    }
+
     function toggleFlip() {
       triggerHaptic([20]);
       sound.playChime();
@@ -1760,6 +1798,26 @@
     document.getElementById("btn-next-photo").addEventListener("click", nextPhoto);
     document.getElementById("btn-flip-card").addEventListener("click", toggleFlip);
     flipScene.addEventListener("click", toggleFlip);
+
+    // Mobile Swipe Gesture Recognition
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    flipScene.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    flipScene.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const swipeDistance = touchEndX - touchStartX;
+      if (Math.abs(swipeDistance) > 45) {
+        if (swipeDistance < 0) {
+          nextPhoto();
+        } else {
+          prevPhoto();
+        }
+      }
+    }, { passive: true });
 
     /* =========================================================================
      * 8. SCROLL ORCHESTRATION: GSAP OR NATIVE INTERSECTIONOBSERVER FALLBACK
@@ -1845,7 +1903,7 @@
     }
 
     /* =========================================================================
-     * 9. UI BUTTON LISTENERS & CONTROLS
+     * 9. UI BUTTON LISTENERS, SHARE API, & CONTROLS
      * ========================================================================= */
     document.getElementById("btn-enter").addEventListener("click", () => {
       triggerHaptic([40, 20, 50]);
@@ -1876,10 +1934,20 @@
       }
     });
 
-    document.getElementById("btn-quick-audio").addEventListener("click", () => {
+    // Idempotent Audio Toggle (Play / Pause)
+    const audioBtn = document.getElementById("btn-quick-audio");
+    audioBtn.addEventListener("click", () => {
       triggerHaptic([30]);
-      sound.playSong();
-      particles.spawnPetals(30);
+      if (!sound.isPlaying) {
+        sound.playSong();
+        audioBtn.textContent = "⏸️ Hunong";
+        audioBtn.classList.add("playing");
+        particles.spawnPetals(30);
+      } else {
+        sound.stopSong();
+        audioBtn.textContent = "🎵 Awit";
+        audioBtn.classList.remove("playing");
+      }
     });
 
     document.getElementById("btn-quick-shower").addEventListener("click", (e) => {
@@ -1891,15 +1959,30 @@
       spawnCelebrationBalloons(20);
     });
 
-    // Pagsablig sa petals nga dungan sa pagpagawas sa daghang balloons
+    // Web Share API Integration
+    document.getElementById("btn-quick-share").addEventListener("click", async () => {
+      triggerHaptic([30]);
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Malipayong Ika-68 nga Adlawng Natawhan Ma! 🌸",
+            text: "Usa ka espesyal ug kinasingkasing nga gasa sa ika-68 nga adlawng natawhan ni Ma Virginia! ❤️",
+            url: window.location.href
+          });
+        } catch (err) {}
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert("Na-kopya na ang link sa celebration page! Pwede na nimo i-paste sa Messenger o SMS. 🌸");
+      }
+    });
+
+    // Pagsablig sa petals nga dungan sa 35 ka naglutaw nga balloons
     document.getElementById("btn-hero-shower").addEventListener("click", (e) => {
       triggerHaptic([40, 30, 60]);
       sound.playChime();
       const rect = e.target.getBoundingClientRect();
       particles.spawnSparks(rect.left + rect.width / 2, rect.top + rect.height / 2, 50);
       particles.spawnPetals(50);
-
-      // Dungan nga pagpagawas sa 35 ka naglutaw nga balloons
       spawnCelebrationBalloons(35);
     });
 
@@ -1915,7 +1998,11 @@
     // Mute procedural music kon mag-play ang video
     const video = document.getElementById("birthday-video");
     if (video) {
-      video.addEventListener("play", () => sound.stopSong());
+      video.addEventListener("play", () => {
+        sound.stopSong();
+        audioBtn.textContent = "🎵 Awit";
+        audioBtn.classList.remove("playing");
+      });
     }
   </script>
 </body>
